@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biologiya Viktorinasi</title>
+<style>
+:root{
+  --bg:#0f1720; --card:#1b2530; --cell:#16202b; --text:#eef2f6; --muted:#9fb0c0;
+  --accent:#2f8f5b; --wrong:#b0453f; --unanswered:#16202b; --border:#2a3644;
+  --brand:#3d7cf0;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f6f9; --card:#ffffff; --cell:#eef1f6; --text:#152030; --muted:#5c6b7a;
+    --border:#dbe2ea;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f6f9; --card:#ffffff; --cell:#eef1f6; --text:#152030; --muted:#5c6b7a; --border:#dbe2ea;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; align-items:center;
+  position:relative;
+}
+.bg-pattern{
+  position:fixed; inset:0; width:100%; height:100%;
+  z-index:-1; pointer-events:none; opacity:.16;
+}
+
+h1{font-size:1.25rem; text-align:center; margin:14px 10px 4px;}
+.sub{color:var(--muted); font-size:.85rem; margin-bottom:10px; text-align:center; padding:0 12px;}
+.board{
+  width:100%; max-width:480px; padding:0 10px 20px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.cats{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+.cat{
+  background:var(--brand); color:#fff; font-weight:600; text-align:center;
+  border-radius:8px; padding:8px 4px; font-size:.72rem; line-height:1.15;
+}
+.row{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+.cell{
+  background:var(--unanswered); border:1px solid var(--border); border-radius:8px;
+  padding:14px 4px; text-align:center; font-weight:700; font-size:1rem;
+  cursor:pointer; color:var(--text); transition:transform .1s;
+}
+.cell:active{transform:scale(.96);}
+.cell.correct{background:var(--accent); border-color:var(--accent); color:#fff;}
+.cell.revealed{background:var(--wrong); border-color:var(--wrong); color:#fff;}
+.cell.done{cursor:default;}
+.score{font-size:.9rem; color:var(--muted); margin-bottom:6px;}
+.overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.55); display:none;
+  align-items:center; justify-content:center; padding:16px; z-index:10;
+}
+.overlay.show{display:flex;}
+.modal{
+  background:var(--card); border-radius:14px; padding:20px; width:100%; max-width:420px;
+  border:1px solid var(--border);
+}
+.modal .emoji{font-size:2.6rem; text-align:center; margin-bottom:8px;}
+.modal .pts{color:var(--brand); font-weight:700; text-align:center; margin-bottom:6px;}
+.modal .q{font-size:1rem; margin-bottom:14px; text-align:center;}
+.modal input{
+  width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border);
+  background:var(--cell); color:var(--text); font-size:1rem; margin-bottom:10px;
+}
+.modal .btns{display:flex; gap:8px; flex-wrap:wrap;}
+.modal button{
+  flex:1; padding:10px 8px; border-radius:8px; border:none; font-size:.9rem;
+  font-weight:600; cursor:pointer;
+}
+.btn-check{background:var(--brand); color:#fff;}
+.btn-give{background:var(--border); color:var(--text);}
+.btn-close{background:transparent; color:var(--muted); width:100%; margin-top:8px;}
+.result{margin-top:10px; text-align:center; font-weight:700; font-size:.95rem;}
+.result.ok{color:var(--accent);}
+.result.no{color:var(--wrong);}
+.answer{margin-top:8px; text-align:center; color:var(--muted); font-size:.9rem;}
+.final{display:none; text-align:center; margin-top:10px; font-weight:700;}
+</style>
+</head>
+<body>
+<svg class="bg-pattern" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="bio-pattern" width="140" height="140" patternUnits="userSpaceOnUse">
+      <!-- coccus bacteria cluster -->
+      <circle cx="18" cy="20" r="7" fill="var(--muted)"/>
+      <circle cx="32" cy="14" r="6" fill="var(--muted)"/>
+      <circle cx="28" cy="30" r="5" fill="var(--muted)"/>
+      <!-- rod bacterium -->
+      <rect x="70" y="10" width="34" height="12" rx="6" fill="var(--muted)" transform="rotate(18 87 16)"/>
+      <!-- amoeba / protist blob -->
+      <path d="M20 90 C10 78,30 62,45 70 C60 60,78 78,66 92 C78 100,64 118,48 112 C34 122,12 108,20 90 Z" fill="var(--muted)"/>
+      <circle cx="40" cy="90" r="4" fill="var(--bg)"/>
+      <!-- mushroom (fungi) -->
+      <path d="M95 120 C95 100,135 100,135 120 Z" fill="var(--muted)"/>
+      <rect x="111" y="120" width="8" height="16" fill="var(--muted)"/>
+      <!-- spirochete squiggle -->
+      <path d="M100 45 Q108 35,116 45 Q124 55,132 45" stroke="var(--muted)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bio-pattern)"/>
+</svg>
+<h1>🧬 Biologiya Viktorinasi</h1>
+<div class="sub">Bakteriyalar • Protistlar • Zamburug'lar — savolni tanlang, javobingizni yozing</div>
+<div class="board">
+  <div class="score" id="score">Ball: 0</div>
+  <div class="cats">
+    <div class="cat">🦠 Bakteriyalar</div>
+    <div class="cat">🧫 Protistlar</div>
+    <div class="cat">🍄 Zamburug'lar</div>
+  </div>
+  <div id="rows"></div>
+  <div class="final" id="final"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="emoji" id="m-emoji"></div>
+    <div class="pts" id="m-pts"></div>
+    <div class="q" id="m-q"></div>
+    <input type="text" id="m-input" placeholder="Javobingizni yozing...">
+    <div class="btns">
+      <button class="btn-check" id="m-check">Tekshirish</button>
+      <button class="btn-give" id="m-give">Javobni ko'rish</button>
+    </div>
+    <div class="result" id="m-result"></div>
+    <div class="answer" id="m-answer" style="display:none"></div>
+    <button class="btn-close" id="m-close">Yopish</button>
+  </div>
+</div>
+
+<script>
+const DATA = [
+  { name:"Bakteriyalar", emoji:"🦠", qs:[
+    {p:100, emoji:"🔬", q:"Bakteriya hujayrasida shakllangan (membrana bilan o'ralgan) yadro bormi?", keys:["yoq","yo'q","yoq yadro yoq","prokariot"]},
+    {p:200, emoji:"➗", q:"Bakteriyalar qanday usulda ko'payadi?", keys:["bolinish","bo'linish","ikkiga bolinish"]},
+    {p:300, emoji:"🛡️", q:"Ba'zi bakteriyalar noqulay sharoitda hosil qiladigan chidamli tuzilma nima deyiladi?", keys:["spora"]},
+    {p:400, emoji:"🌱", q:"Havodagi azotni o'zlashtirib, tuproqni boyituvchi bakteriyalar qanday nomlanadi?", keys:["tugunak","azot toplovchi","azot to'plovchi"]},
+    {p:500, emoji:"🔭", q:"Bakteriyalarni mikroskop yordamida birinchi bo'lib kim kuzatgan (kashf etgan)?", keys:["levenguk","levengук","antoni van levenguk","van levenguk"]}
+  ]},
+  { name:"Protistlar", emoji:"🧫", qs:[
+    {p:100, emoji:"🦠", q:"Amyoba qanday tuzilma yordamida harakatlanadi?", keys:["yolgon oyoqcha","yolg'on oyoqcha","psevdopodiya"]},
+    {p:200, emoji:"🌿", q:"Xlorofilga ega bo'lib, fotosintez qila oladigan bir hujayrali protistga misol keltiring.", keys:["evglena","xlorella","yashil suvotlar"]},
+    {p:300, emoji:"🧫", q:"Infuzoriya-tufelka qanday organoidlar yordamida harakatlanadi?", keys:["kiprik","kipriklar"]},
+    {p:400, emoji:"🦟", q:"Bezgak (malyariya) kasalligini qo'zg'atuvchi protist qanday nomlanadi?", keys:["plazmodiy","bezgak plazmodiysi","plasmodium"]},
+    {p:500, emoji:"🧬", q:"Protistlar tuzilishiga ko'ra qanday hujayraga ega organizmlar hisoblanadi?", keys:["eukariot","bir hujayrali eukariot"]}
+  ]},
+  { name:"Zamburug'lar", emoji:"🍄", qs:[
+    {p:100, emoji:"🧱", q:"Zamburug'lar hujayra devori asosan nimadan tashkil topgan?", keys:["xitin"]},
+    {p:200, emoji:"🍞", q:"Non pishirishda va bijg'ish jarayonida ishlatiladigan bir hujayrali zamburug' turi qanday nomlanadi?", keys:["achitqi","drojji"]},
+    {p:300, emoji:"🕸️", q:"Zamburug' tanasini tashkil etuvchi ipsimon tuzilmalar to'plami nima deyiladi?", keys:["mitseliy","gifa","gifalar"]},
+    {p:400, emoji:"💊", q:"Penitsillin antibiotigi qaysi zamburug' turidan olinadi?", keys:["penicillium","penitsillium","kok zamburug","ko'k zamburug'"]},
+    {p:500, emoji:"🍂", q:"Zamburug'lar oziqlanish usuliga ko'ra avtotrofmi yoki geterotrofmi?", keys:["geterotrof"]}
+  ]}
+];
+
+let score = 0;
+let current = null;
+
+function normalize(s){
+  return s.toLowerCase()
+    .replace(/[’‘`]/g,"'")
+    .replace(/[^a-zoʻʼ' \u0400-\u04FF]/gi,"")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function renderBoard(){
+  const rowsEl = document.getElementById('rows');
+  rowsEl.innerHTML = "";
+  for(let i=0;i<5;i++){
+    const row = document.createElement('div');
+    row.className = 'row';
+    DATA.forEach((cat, ci) => {
+      const item = cat.qs[i];
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (item.status ? ' done ' + item.status : '');
+      cell.textContent = item.status ? '' : item.p;
+      if(item.status === 'correct') cell.textContent = '✓';
+      if(item.status === 'revealed') cell.textContent = '✗';
+      cell.onclick = () => { if(!item.status) openModal(ci, i); };
+      row.appendChild(cell);
+    });
+    rowsEl.appendChild(row);
+  }
+  document.getElementById('score').textContent = 'Ball: ' + score;
+  checkFinal();
+}
+
+function openModal(ci, qi){
+  current = {ci, qi};
+  const item = DATA[ci].qs[qi];
+  document.getElementById('m-emoji').textContent = item.emoji;
+  document.getElementById('m-pts').textContent = DATA[ci].name + ' — ' + item.p + ' ball';
+  document.getElementById('m-q').textContent = item.q;
+  document.getElementById('m-input').value = '';
+  document.getElementById('m-result').textContent = '';
+  document.getElementById('m-result').className = 'result';
+  document.getElementById('m-answer').style.display = 'none';
+  document.getElementById('m-input').style.display = 'block';
+  document.getElementById('m-check').style.display = 'block';
+  document.getElementById('m-give').style.display = 'block';
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('m-input').focus(), 50);
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+  current = null;
+  renderBoard();
+}
+
+function checkAnswer(){
+  if(!current) return;
+  const item = DATA[current.ci].qs[current.qi];
+  if(item.status) return;
+  const val = normalize(document.getElementById('m-input').value);
+  const ok = val.length>0 && item.keys.some(k => val.includes(normalize(k)) || normalize(k).includes(val) && val.length>2);
+  const resEl = document.getElementById('m-result');
+  if(ok){
+    item.status = 'correct';
+    score += item.p;
+    resEl.textContent = "✅ To'g'ri!";
+    resEl.className = 'result ok';
+    lockModal();
+  } else {
+    resEl.textContent = "❌ Noto'g'ri, qayta urinib ko'ring yoki javobni ko'ring.";
+    resEl.className = 'result no';
+  }
+}
+
+function giveUp(){
+  if(!current) return;
+  const item = DATA[current.ci].qs[current.qi];
+  if(item.status) return;
+  item.status = 'revealed';
+  document.getElementById('m-answer').style.display = 'block';
+  document.getElementById('m-answer').textContent = "To'g'ri javob: " + item.keys[0];
+  document.getElementById('m-result').textContent = '';
+  lockModal();
+}
+
+function lockModal(){
+  document.getElementById('m-input').style.display = 'none';
+  document.getElementById('m-check').style.display = 'none';
+  document.getElementById('m-give').style.display = 'none';
+}
+
+function checkFinal(){
+  const total = DATA.reduce((a,c)=>a+c.qs.length,0);
+  const answered = DATA.reduce((a,c)=>a+c.qs.filter(q=>q.status).length,0);
+  const finalEl = document.getElementById('final');
+  if(answered === total){
+    finalEl.style.display = 'block';
+    finalEl.textContent = "🎉 Viktorina tugadi! Umumiy ball: " + score + " / 4500";
+  } else {
+    finalEl.style.display = 'none';
+  }
+}
+
+document.getElementById('m-check').onclick = checkAnswer;
+document.getElementById('m-give').onclick = giveUp;
+document.getElementById('m-close').onclick = closeModal;
+document.getElementById('m-input').addEventListener('keydown', e => { if(e.key==='Enter') checkAnswer(); });
+document.getElementById('overlay').addEventListener('click', e => { if(e.target.id==='overlay') closeModal(); });
+
+renderBoard();
+</script>
+</body>
+</html>
